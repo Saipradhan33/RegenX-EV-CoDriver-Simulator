@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AIoT EV Co‑Driver · Route Simulation</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header>
+        <div>
+          <p class="eyebrow">AIoT EV CO-DRIVER</p>
+          <h1>Route-aware EV Co-Driver</h1>
+        </div>
+        <div class="connection" id="connection"><span></span> SIMULATOR READY</div>
+      </header>
+
+      <section class="navigation panel" aria-label="Route planning and live map">
+        <div class="navigation-heading">
+          <div><p class="label">VERSION 2 · ROUTE-AWARE DRIVE</p><h2>Plan a journey</h2></div>
+          <div class="traffic-status" id="traffic-status" aria-live="polite"><span></span><b>MAP NOT CONNECTED</b></div>
+        </div>
+        <div class="route-form">
+          <label>FROM<input id="route-origin" autocomplete="street-address" placeholder="Starting address or place" /></label>
+          <label>TO<input id="route-destination" autocomplete="street-address" placeholder="Where are you going?" /></label>
+          <button id="navigate" class="primary-button">Navigate</button>
+        </div>
+        <div class="drive-actions">
+          <button id="vehicle-toggle" class="vehicle-toggle">Start simulated drive</button>
+          <button id="reset">Reset drive</button>
+          <span>↑ accelerate · ↓ brake · ← → steer · M mode · R regen · Space pause</span>
+        </div>
+        <details class="map-setup">
+          <summary>Connect Google Maps for live route and traffic</summary>
+          <div class="map-key-row">
+            <label for="maps-key">Google Maps API key <span>stored in this browser session only</span></label>
+            <div><input id="maps-key" type="password" autocomplete="off" placeholder="Paste your restricted API key" /><button id="save-maps-key">Connect map</button></div>
+          </div>
+          <small>Enable Maps JavaScript API and Routes API, attach billing, and restrict the key to this local site. The app requests a traffic-aware route on Navigate and refreshes it automatically every 2 minutes while driving.</small>
+        </details>
+        <div class="map-frame">
+          <div id="map" role="application" aria-label="Google map showing route and simulated EV position">
+            <div class="map-empty"><span>ROUTE SIMULATION</span><b>Connect the map, then enter a start and destination.</b><small>The vehicle will move along the selected route at its simulated speed.</small></div>
+          </div>
+          <div class="map-overlay"><span class="vehicle-chip"><i></i> SIMULATED EV</span><span id="map-location">Waiting for a route</span></div>
+          <div class="map-legend"><span><i class="normal"></i>Flowing</span><span><i class="slow"></i>Slow</span><span><i class="jam"></i>Heavy</span></div>
+        </div>
+        <div class="route-summary">
+          <div><small>TRAFFIC ETA</small><b id="route-eta">—</b></div>
+          <div><small>REMAINING ROUTE</small><b id="route-distance">—</b></div>
+          <div><small>ARRIVAL SOC · MODEL ESTIMATE</small><b id="arrival-soc">—</b></div>
+          <div><small>TRAFFIC UPDATED</small><b id="route-updated">—</b></div>
+        </div>
+        <div class="route-coach" id="route-coach" aria-live="polite">
+          <div><b id="route-coach-title">ROUTE CO-DRIVER</b><span id="route-coach-message">Enter a route to see traffic-aware driving guidance.</span></div>
+          <button id="apply-route-settings" disabled>Apply route advice</button>
+        </div>
+      </section>
+
+      <section class="sim-grid">
+        <section class="drive-card">
+          <canvas id="road" width="960" height="620" hidden aria-hidden="true"></canvas>
+          <div class="speed-readout"><strong id="speed">0</strong><span>km/h</span></div>
+          <div class="assist-banner" id="assist">SYSTEM READY · SIMULATOR MODEL LOADED</div>
+          <div class="route-readout"><b id="distance">—</b><span id="elevation">No active navigation</span></div>
+        </section>
+
+        <aside class="telemetry">
+          <section class="panel energy">
+            <p class="label">BATTERY</p>
+            <div class="battery"><div id="battery-fill"></div></div>
+            <strong id="battery-value">82%</strong>
+            <small id="range">286 km estimated range</small>
+          </section>
+
+          <section class="panel">
+            <p class="label">CO-DRIVER</p>
+            <div class="advice" id="advice">Calibrating vehicle data…</div>
+            <div class="n8n-decision" id="n8n-decision" aria-live="polite">
+              <b id="n8n-decision-status">LOCAL SAFETY GUIDANCE</b>
+              <small id="n8n-decision-source">Waiting for an n8n decision response.</small>
+              <button id="apply-n8n-settings" disabled>Apply recommended settings</button>
+            </div>
+            <dl>
+              <div><dt>Drive mode</dt><dd id="mode">NORMAL</dd></div>
+              <div><dt>Regeneration</dt><dd id="regen">LOW</dd></div>
+              <div><dt>Simulation grade</dt><dd id="grade">0.0%</dd></div>
+              <div><dt>Motor torque</dt><dd id="torque">0 Nm</dd></div>
+            </dl>
+          </section>
+
+          <section class="panel flow">
+            <p class="label">ENERGY FLOW</p>
+            <strong id="energy-flow">0.0 kW</strong>
+            <div class="flow-track"><div id="flow-fill"></div></div>
+            <small id="flow-note">Coasting · no battery draw</small>
+          </section>
+
+          <section class="panel pedals">
+            <p class="label">LIVE INPUTS</p>
+            <div class="input-row"><span>STEERING</span><meter id="steering-meter" min="-1" max="1" value="0"></meter><b id="steering-value">0°</b></div>
+            <div class="input-row"><span>THROTTLE</span><meter id="throttle-meter" min="0" max="1" value="0"></meter><b id="throttle-value">0%</b></div>
+            <div class="input-row"><span>BRAKE</span><meter id="brake-meter" min="0" max="1" value="0"></meter><b id="brake-value">0%</b></div>
+          </section>
+
+          <section class="panel data-capture">
+            <p class="label">TELEMETRY CONNECTION</p>
+            <strong id="capture-status">LOCAL LOGGING · READY</strong>
+            <small id="capture-detail">0 records in this session · JSONL export available</small>
+            <label for="webhook-url">n8n webhook URL (optional)</label>
+            <input id="webhook-url" type="url" inputmode="url" placeholder="https://…/webhook/ev-telemetry" autocomplete="off" />
+            <div class="capture-actions">
+              <button id="save-webhook">Save endpoint</button>
+              <button id="download-log">Download JSONL</button>
+              <button id="download-csv">Download CSV</button>
+            </div>
+          </section>
+
+        </aside>
+      </section>
+
+      <section class="operator-console" aria-label="Assistance settings">
+        <section class="panel switch-card">
+          <p class="label">DRIVING STYLE · ASSISTANCE INPUT</p>
+          <div class="switch-row"><span>Drive mode</span><div class="segmented" id="mode-switch"><button data-mode="0">Eco</button><button class="active" data-mode="1">Normal</button><button data-mode="2">Sport</button></div></div>
+          <div class="switch-row"><span>Regeneration</span><div class="segmented" id="regen-switch"><button data-regen="0">Low</button><button class="active" data-regen="1">Standard</button><button data-regen="2">Strong</button></div></div>
+          <p class="system-note"><span></span> Simulation / monitoring only — no real wheel or motor commands are sent.</p>
+        </section>
+      </section>
+    </main>
+    <script src="../backend/navigation.js"></script>
+    <script src="../backend/simulator.js"></script>
+  </body>
+</html>

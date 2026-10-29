@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AIoT EV · Terrain Demonstration</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <header><div><p>AIOT EV CO-DRIVER</p><h1>Terrain & Energy Demonstration</h1></div><span class="safe">SIMULATION ONLY</span></header>
+      <section class="brief"><article><b>UPHILL</b><span>Torque demand rises with grade</span></article><article><b>DOWNHILL</b><span>Braking converts motion back to battery energy</span></article></section>
+      <canvas id="demo" width="1080" height="430" aria-label="Uphill and downhill energy demonstration"></canvas>
+      <section class="metrics"><div><span>GRADE</span><strong id="grade">+7.0%</strong></div><div><span>TRACTION</span><strong id="traction">+0 kW</strong></div><div><span>RECOVERY</span><strong id="recovery">0 kW</strong></div><div><span>BATTERY</span><strong id="battery">82.00%</strong></div></section>
+      <section class="controls"><button id="toggle">Pause demo</button><button id="reset">Restart</button><p id="message">Climbing: torque demand increases and battery energy is consumed.</p></section>
+    </main>
+    <script src="../backend/terrain-demo.js"></script>
+  </body>
+</html>

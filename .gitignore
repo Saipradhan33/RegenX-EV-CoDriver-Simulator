@@ -1,0 +1,24 @@
+# Operating-system and IDE metadata
+.DS_Store
+.idea/
+
+# Default ignored files
+/shelf/
+/workspace.xml
+
+# Editor-based HTTP Client requests
+/httpRequests/
+
+# Ignored default folder with query files
+/queries/
+
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# Never publish local secrets or hosting configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
