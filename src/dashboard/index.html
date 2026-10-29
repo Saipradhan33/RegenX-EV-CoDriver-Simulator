@@ -3,19 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AIoT EV Co‑Driver · Route Simulation</title>
+    <title>REGENX · EV Co-Driver</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="cockpit.css" />
   </head>
   <body>
     <main class="app-shell">
       <header>
-        <div>
-          <p class="eyebrow">AIoT EV CO-DRIVER</p>
-          <h1>Route-aware EV Co-Driver</h1>
+        <div class="brand-lockup">
+          <h1>REGENX</h1>
+          <p class="brand-subtitle">EV Co-Driver</p>
         </div>
         <div class="connection" id="connection"><span></span> SIMULATOR READY</div>
       </header>
 
+      <section class="cockpit-workspace" aria-label="Vehicle and navigation cockpit">
       <section class="navigation panel" aria-label="Route planning and live map">
         <div class="navigation-heading">
           <div><p class="label">VERSION 2 · ROUTE-AWARE DRIVE</p><h2>Plan a journey</h2></div>
@@ -40,6 +42,7 @@
           <small>Enable Maps JavaScript API and Routes API, attach billing, and restrict the key to this local site. The app requests a traffic-aware route on Navigate and refreshes it automatically every 2 minutes while driving.</small>
         </details>
         <div class="map-frame">
+          <div id="globe-root"></div>
           <div id="map" role="application" aria-label="Google map showing route and simulated EV position">
             <div class="map-empty"><span>ROUTE SIMULATION</span><b>Connect the map, then enter a start and destination.</b><small>The vehicle will move along the selected route at its simulated speed.</small></div>
           </div>
@@ -61,75 +64,97 @@
       <section class="sim-grid">
         <section class="drive-card">
           <canvas id="road" width="960" height="620" hidden aria-hidden="true"></canvas>
+          <div class="energy-visual" data-state="idle" aria-hidden="true">
+            <svg viewBox="0 0 240 400" class="energy-car">
+              <defs><linearGradient id="chassis-tint" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#1c2d43"/><stop offset=".5" stop-color="#0b1421"/><stop offset="1" stop-color="#182a40"/></linearGradient></defs>
+              <ellipse cx="120" cy="205" rx="93" ry="182" fill="#117aff" opacity=".06"/>
+              <g class="sedan-wheels"><rect x="28" y="79" width="18" height="63" rx="7"/><rect x="194" y="79" width="18" height="63" rx="7"/><rect x="28" y="265" width="18" height="63" rx="7"/><rect x="194" y="265" width="18" height="63" rx="7"/></g>
+              <path class="sedan-body" d="M120 20 C75 20 49 35 44 75 L39 115 L39 281 L45 332 C50 363 75 381 120 382 C165 381 190 363 195 332 L201 281 L201 115 L196 75 C191 35 165 20 120 20 Z"/>
+              <path class="sedan-frame" d="M48 100 Q55 49 120 46 Q185 49 192 100 M43 305 Q52 350 120 350 Q188 350 197 305 M55 107 L55 286 M185 107 L185 286 M58 109 Q120 98 182 109 M58 281 Q120 293 182 281"/>
+              <path class="sedan-glass" d="M61 112 Q67 84 83 79 Q120 69 157 79 Q173 84 179 112 L173 135 Q120 125 67 135 Z M67 267 Q120 277 173 267 L179 290 Q173 310 157 315 Q120 324 83 315 Q67 310 61 290 Z"/>
+              <path class="sedan-frame" d="M67 143 H173 M67 257 H173 M66 143 L66 257 M174 143 L174 257 M78 143 V257 M162 143 V257"/>
+              <rect class="battery-pack" x="84" y="150" width="72" height="100" rx="8"/><path class="battery-detail" d="M91 166 H149 M91 182 H149 M91 198 H149 M91 214 H149 M91 230 H149"/>
+              <path class="flow-track-svg" d="M120 159 V112 H38 M120 159 V112 H202 M120 241 V296 H38 M120 241 V296 H202"/>
+              <path class="energy-path" d="M120 159 V112 H38 M120 159 V112 H202 M120 241 V296 H38 M120 241 V296 H202"/>
+              <path class="headlamps" d="M55 67 Q67 55 83 53 M157 53 Q173 55 185 67"/><path class="taillamps" d="M54 342 Q69 353 83 354 M157 354 Q171 353 186 342"/>
+            </svg>
+            <span class="energy-state">ENERGY FLOW · IDLE</span>
+          </div>
           <div class="speed-readout"><strong id="speed">0</strong><span>km/h</span></div>
           <div class="assist-banner" id="assist">SYSTEM READY · SIMULATOR MODEL LOADED</div>
           <div class="route-readout"><b id="distance">—</b><span id="elevation">No active navigation</span></div>
+          <div class="cluster-details" aria-hidden="true"><div><span>BATTERY</span><b data-mirror="battery-value">—</b></div><div><span>POWER FLOW</span><b data-mirror="energy-flow">—</b></div><div><span>DRIVE MODE</span><b data-mirror="mode">—</b></div><div><span>REGENERATION</span><b data-mirror="regen">—</b></div></div>
+          <section class="cluster-controls" aria-label="Assistance settings">
+            <p class="label">DRIVING STYLE · ASSISTANCE</p>
+            <div class="cluster-control-row"><span>Drive mode</span><div class="segmented" id="mode-switch"><button data-mode="0">Eco</button><button class="active" data-mode="1">Normal</button><button data-mode="2">Sport</button></div></div>
+            <div class="cluster-control-row"><span>Regeneration</span><div class="segmented" id="regen-switch"><button data-regen="0">Low</button><button class="active" data-regen="1">Standard</button><button data-regen="2">Strong</button></div></div>
+            <p class="system-note"><span></span> Simulation only — no real vehicle commands.</p>
+          </section>
         </section>
 
         <aside class="telemetry">
-          <section class="panel energy">
-            <p class="label">BATTERY</p>
-            <div class="battery"><div id="battery-fill"></div></div>
-            <strong id="battery-value">82%</strong>
-            <small id="range">286 km estimated range</small>
-          </section>
+          <div class="telemetry-stack">
+            <section class="panel energy">
+              <p class="label">BATTERY</p>
+              <div class="battery"><div id="battery-fill"></div></div>
+              <strong id="battery-value">82%</strong>
+              <small id="range">286 km estimated range</small>
+            </section>
 
-          <section class="panel">
-            <p class="label">CO-DRIVER</p>
-            <div class="advice" id="advice">Calibrating vehicle data…</div>
-            <div class="n8n-decision" id="n8n-decision" aria-live="polite">
-              <b id="n8n-decision-status">LOCAL SAFETY GUIDANCE</b>
-              <small id="n8n-decision-source">Waiting for an n8n decision response.</small>
-              <button id="apply-n8n-settings" disabled>Apply recommended settings</button>
-            </div>
-            <dl>
-              <div><dt>Drive mode</dt><dd id="mode">NORMAL</dd></div>
-              <div><dt>Regeneration</dt><dd id="regen">LOW</dd></div>
-              <div><dt>Simulation grade</dt><dd id="grade">0.0%</dd></div>
-              <div><dt>Motor torque</dt><dd id="torque">0 Nm</dd></div>
-            </dl>
-          </section>
+            <section class="panel data-capture">
+              <p class="label">TELEMETRY CONNECTION</p>
+              <strong id="capture-status">LOCAL LOGGING · READY</strong>
+              <small id="capture-detail">0 records in this session · JSONL export available</small>
+              <label for="webhook-url">RegenX webhook URL (optional)</label>
+              <input id="webhook-url" type="url" inputmode="url" placeholder="https://…/webhook/ev-telemetry" autocomplete="off" />
+              <div class="capture-actions">
+                <button id="save-webhook">Save endpoint</button>
+                <button id="download-log">Download JSONL</button>
+                <button id="download-csv">Download CSV</button>
+              </div>
+            </section>
+          </div>
 
-          <section class="panel flow">
-            <p class="label">ENERGY FLOW</p>
-            <strong id="energy-flow">0.0 kW</strong>
-            <div class="flow-track"><div id="flow-fill"></div></div>
-            <small id="flow-note">Coasting · no battery draw</small>
-          </section>
+          <div class="telemetry-stack">
+            <section class="panel co-driver-panel">
+              <p class="label">CO-DRIVER</p>
+              <div class="advice" id="advice">Calibrating vehicle data…</div>
+              <div class="n8n-decision" id="n8n-decision" aria-live="polite">
+                <b id="n8n-decision-status">LOCAL SAFETY GUIDANCE</b>
+                <small id="n8n-decision-source">Waiting for a RegenX decision response.</small>
+                <button id="apply-n8n-settings" disabled>Apply recommended settings</button>
+              </div>
+              <dl>
+                <div><dt>Drive mode</dt><dd id="mode">NORMAL</dd></div>
+                <div><dt>Regeneration</dt><dd id="regen">LOW</dd></div>
+                <div><dt>Simulation grade</dt><dd id="grade">0.0%</dd></div>
+                <div><dt>Motor torque</dt><dd id="torque">0 Nm</dd></div>
+              </dl>
+            </section>
 
-          <section class="panel pedals">
-            <p class="label">LIVE INPUTS</p>
-            <div class="input-row"><span>STEERING</span><meter id="steering-meter" min="-1" max="1" value="0"></meter><b id="steering-value">0°</b></div>
-            <div class="input-row"><span>THROTTLE</span><meter id="throttle-meter" min="0" max="1" value="0"></meter><b id="throttle-value">0%</b></div>
-            <div class="input-row"><span>BRAKE</span><meter id="brake-meter" min="0" max="1" value="0"></meter><b id="brake-value">0%</b></div>
-          </section>
-
-          <section class="panel data-capture">
-            <p class="label">TELEMETRY CONNECTION</p>
-            <strong id="capture-status">LOCAL LOGGING · READY</strong>
-            <small id="capture-detail">0 records in this session · JSONL export available</small>
-            <label for="webhook-url">n8n webhook URL (optional)</label>
-            <input id="webhook-url" type="url" inputmode="url" placeholder="https://…/webhook/ev-telemetry" autocomplete="off" />
-            <div class="capture-actions">
-              <button id="save-webhook">Save endpoint</button>
-              <button id="download-log">Download JSONL</button>
-              <button id="download-csv">Download CSV</button>
-            </div>
-          </section>
+            <section class="panel dynamics">
+              <div class="flow flow-summary">
+                <p class="label">ENERGY FLOW</p>
+                <strong id="energy-flow">0.0 kW</strong>
+                <div class="flow-track"><div id="flow-fill"></div></div>
+                <small id="flow-note">Coasting · no battery draw</small>
+              </div>
+              <div class="pedals input-summary">
+                <p class="label">LIVE INPUTS</p>
+                <div class="input-row"><span>STEERING</span><meter id="steering-meter" min="-1" max="1" value="0"></meter><b id="steering-value">0°</b></div>
+                <div class="input-row"><span>THROTTLE</span><meter id="throttle-meter" min="0" max="1" value="0"></meter><b id="throttle-value">0%</b></div>
+                <div class="input-row"><span>BRAKE</span><meter id="brake-meter" min="0" max="1" value="0"></meter><b id="brake-value">0%</b></div>
+              </div>
+            </section>
+          </div>
 
         </aside>
       </section>
-
-      <section class="operator-console" aria-label="Assistance settings">
-        <section class="panel switch-card">
-          <p class="label">DRIVING STYLE · ASSISTANCE INPUT</p>
-          <div class="switch-row"><span>Drive mode</span><div class="segmented" id="mode-switch"><button data-mode="0">Eco</button><button class="active" data-mode="1">Normal</button><button data-mode="2">Sport</button></div></div>
-          <div class="switch-row"><span>Regeneration</span><div class="segmented" id="regen-switch"><button data-regen="0">Low</button><button class="active" data-regen="1">Standard</button><button data-regen="2">Strong</button></div></div>
-          <p class="system-note"><span></span> Simulation / monitoring only — no real wheel or motor commands are sent.</p>
-        </section>
       </section>
     </main>
-    <script src="../backend/navigation.js"></script>
-    <script src="../backend/simulator.js"></script>
+    <script src="../backend/navigation.js?v=2026-10-29-2"></script>
+    <script src="../backend/simulator.js?v=2026-10-29-2"></script>
+    <script src="cockpit-layer.js"></script>
+    <script src="globe.bundle.js"></script>
   </body>
 </html>
