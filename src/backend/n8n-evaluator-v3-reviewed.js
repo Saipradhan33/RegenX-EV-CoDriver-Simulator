@@ -1,6 +1,6 @@
 
 /**
- * AIoT EV CO-DRIVER — TELEMETRY EVALUATOR
+ * REGENX EV CO-DRIVER — TELEMETRY EVALUATOR
  * Version: 3.0
  *
  * n8n Code node:
